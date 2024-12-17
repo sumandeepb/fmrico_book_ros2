@@ -34,7 +34,7 @@ BumpGoNode::BumpGoNode()
     "input_scan", rclcpp::SensorDataQoS(),
     std::bind(&BumpGoNode::scan_callback, this, _1));
 
-  vel_pub_ = create_publisher<geometry_msgs::msg::Twist>("output_vel", 10);
+  vel_pub_ = create_publisher<geometry_msgs::msg::Twist>("output_vel", rclcpp::SystemDefaultsQoS());
   timer_ = create_wall_timer(50ms, std::bind(&BumpGoNode::control_cycle, this));
 
   state_ts_ = now();
@@ -55,7 +55,7 @@ BumpGoNode::control_cycle()
   }
 
   geometry_msgs::msg::Twist out_vel;
-
+  RCLCPP_DEBUG(get_logger(), "State %d", state_);
   switch (state_) {
     case FORWARD:
       out_vel.linear.x = SPEED_LINEAR;
@@ -106,7 +106,9 @@ BumpGoNode::check_forward_2_back()
   // going forward when deteting an obstacle
   // at 0.5 meters with the front laser read
   size_t pos = last_scan_->ranges.size() / 2;
-  return last_scan_->ranges[pos] < OBSTACLE_DISTANCE;
+  float obstacle_distance = last_scan_->ranges[pos];
+  RCLCPP_DEBUG(get_logger(), "Obstacle distance %f", obstacle_distance);
+  return obstacle_distance < OBSTACLE_DISTANCE;
 }
 
 bool
